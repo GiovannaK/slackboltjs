@@ -1,75 +1,75 @@
 import { App, ExpressReceiver } from "@slack/bolt";
 import axios from "axios";
+import bodyParser from "body-parser";
+import {
+  addUsersToChanel,
+  createChannel,
+  getPublicChannels,
+  sendMessageWithMention,
+} from "./adapters/presentation/controllers/channels";
+import {
+  addUsersToGroup,
+  createGroup,
+  getGroups,
+} from "./adapters/presentation/controllers/groups";
+import { getAllUsersFromTeam } from "./adapters/presentation/controllers/users";
 
 export const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET || "",
 });
 
+receiver.router.use(bodyParser.urlencoded({ extended: true }));
+receiver.router.use(bodyParser.json());
+
 export const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  receiver,
-  customRoutes: [
-    {
-      path: "/slack/list_public_channels",
-      method: "GET",
-      handler(req, res) {
-        res.end("Hello World");
-      },
-    },
-  ],
+  appToken: process.env.APP_LEVEL_TOKEN,
+  socketMode: true,
 });
 
-/* Add functionality here */
+receiver.router.get("/slack/list_public_channels", (req, res) => {
+  getPublicChannels(res);
+});
 
-async function getPublicChannels() {
-  const channels = await app.client.conversations.list({
-    token: process.env.USER_LEVEL_TOKEN,
-  });
-  console.log("CHANNELS", channels.channels);
-  return channels.channels;
-}
+receiver.router.post("/slack/create_channel", (req, res) => {
+  createChannel(res, req.body);
+});
 
-getPublicChannels();
+receiver.router.get("/slack/list_groups", (req, res) => {
+  getGroups(res);
+});
 
-async function getGroups() {
-  const groups = await axios.get(`https://slack.com/api/usergroups.list`, {
-    headers: { Authorization: `Bearer ${process.env.USER_LEVEL_TOKEN}` },
-  });
+receiver.router.post("/slack/add_users_to_channel", (req, res) => {
+  addUsersToChanel(res, req.body);
+});
 
-  console.log("GROUPS", groups.data.usergroups);
-}
+receiver.router.get("/slack/users", (req, res) => {
+  getAllUsersFromTeam(res);
+});
 
-getGroups();
+receiver.router.post("/slack/create_group", (req, res) => {
+  createGroup(res, req.body);
+});
 
-async function createChannel() {
-  const channel = await app.client.conversations.create({
-    token: process.env.SLACK_BOT_TOKEN,
-    name: "newchannel",
-    is_private: false,
-  });
-  console.log(channel);
-}
+receiver.router.post("/slack/add_user_to_group", (req, res) => {
+  addUsersToGroup(res, req.body);
+});
 
-// createChannel();
+receiver.router.post('/slack/action', (req, res) => {
+  res.send({challenge: req.body.challenge})
+})
 
-// Pegar team_id do payload do evento de canal criado
+const payload = {
+  channel: "C03T3NELAP6",
+  text: "Hello World",
+};
 
-// async function addExternalUser() {
-//   const user = await app.client.admin.users.invite({
-//     token: process.env.USER_LEVEL_TOKEN,
-//     channel_ids: "C03STVDVCD8",
-//     email: "giovanna.freire@edu.unipar.br",
-//     team_id: "T03SR1BNLF7",
-//   });
-
-//   console.log("EXTERNAL USER", user);
-// }
-
-// addExternalUser();
+sendMessageWithMention(payload);
 
 (async () => {
   // Start the app
   await app.start(process.env.PORT || 3000);
+  await receiver.start(Number(process.env.PORT) || 3000);
 
   console.log("⚡️ Bolt app is running!");
 })();
