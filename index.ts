@@ -5,7 +5,6 @@ import {
   addUsersToChanel,
   createChannel,
   getPublicChannels,
-  sendMessageWithMention,
 } from "./adapters/presentation/controllers/channels";
 import {
   addUsersToGroup,
@@ -64,7 +63,17 @@ const payload = {
   text: "Hello World",
 };
 
-sendMessageWithMention(payload);
+app.event("app_mention", async ({ body, context, say }) => {
+  // const message = await client.chat.postMessage({
+  //   channel: payload.channel,
+  //   text: `${payload.text}`,
+  //   token: process.env.SLACK_BOT_TOKEN
+  // });
+  // console.log('EVENT', event)
+  // console.log('CLIENT', client)
+  // console.log('MESSAGE', message)
+  await say('hello world')
+});
 
 (async () => {
   // Start the app

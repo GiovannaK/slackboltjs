@@ -47,18 +47,12 @@ export async function addUsersToChanel(
   }
 }
 
-export async function sendMessageWithMention(
-  payload: sendMessageWithMentionInterface
-) {
-  try {
-    const event = app.event("app_mention", async ({ event, client }) => {
-      const message = await client.chat.postMessage({
-        channel: payload.channel,
-        text: `${payload.text}, ${event.user}`,
-      });
-      console.log('MESSAGE', message)
-    });
-  } catch (error) {
-    return error
-  }
-}
+// export async function sendMessageWithMention(
+//   payload: sendMessageWithMentionInterface
+// ) {
+//   try {
+
+//   } catch (error) {
+//     return error
+//   }
+// }
